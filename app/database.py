@@ -36,7 +36,6 @@ class Database:
 
     @classmethod
     def initialize(cls):
-
         try:
             cls._pool = SimpleConnectionPool(
                 DB_POOL_MIN,
@@ -91,10 +90,13 @@ class Database:
         return row
 
     @classmethod
-     def close(cls):
+    def close(cls):
+        """Close all database connections"""
         if cls._pool:
             cls._pool.closeall()
             logger.info("✅ Database connections closed")
+
+
 
 
 # ============================================================
