@@ -1,16 +1,3 @@
-"""
-PneumAI - Unified FastAPI Backend
-Lung Cancer Detection System with YOLOv12 Integration
-
-Main application entry point with:
-- FastAPI app initialization
-- CORS middleware
-- Static file serving
-- Router registration
-- Database connection pooling
-- Startup/shutdown events
-"""
-
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -20,6 +7,8 @@ import logging
 from app.config import settings
 from app.database import Database
 from app.services.yolo_service import yolo_service
+
+load_dotenv()
 
 # Configure logging
 logging.basicConfig(

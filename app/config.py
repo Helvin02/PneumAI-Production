@@ -17,9 +17,6 @@ load_dotenv(dotenv_path=".env", override=False)
 class Settings:
     """Application settings loaded from environment variables"""
 
-    # ============================================================
-    # DATABASE CONFIGURATION
-    # ============================================================
     DATABASE_URL: str = os.getenv(
         "DATABASE_URL",
         "postgresql://pneumai_admin:pneumai_dev_password_2025@localhost:5432/pneumai_db"
@@ -59,6 +56,7 @@ class Settings:
     ALLOWED_ORIGINS: list = [
         "http://localhost:3000",
         "http://localhost:3001",
+        "https://pneumai-production-production.up.railway.app",
         FRONTEND_URL,
     ]
 

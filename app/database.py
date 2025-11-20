@@ -14,9 +14,19 @@ import logging
 
 from app.config import settings
 
+load_dotenv()
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# DB Pool Settings
+DB_POOL_MIN = int(os.environ.get("DB_POOL_MIN", 1))
+DB_POOL_MAX = int(os.environ.get("DB_POOL_MAX", 10))
+DATABASE_URL = os.environ.get("DATABASE_URL")
+
+if not DATABASE_URL:
+    raise Exception("❌ DATABASE_URL not set in .env")
 
 
 class Database:
@@ -26,46 +36,32 @@ class Database:
 
     @classmethod
     def initialize(cls):
-        """
-        Initialize the database connection pool from settings
-        """
-        try:
-            # Parse DATABASE_URL
-            db_url = settings.DATABASE_URL
 
+        try:
             cls._pool = SimpleConnectionPool(
-                settings.DB_POOL_MIN,
-                settings.DB_POOL_MAX,
-                dsn=db_url
+                DB_POOL_MIN,
+                DB_POOL_MAX,
+                dsn=DATABASE_URL
             )
-            logger.info(f"✅ Database pool initialized: {settings.DB_POOL_MIN}-{settings.DB_POOL_MAX} connections")
+            logger.info(f"✅ Database pool initialized ({DB_POOL_MIN}-{DB_POOL_MAX} connections)")
             return True
         except Exception as e:
             logger.error(f"❌ Database initialization failed: {e}")
-            return False
+            raise
 
     @classmethod
     @contextmanager
     def get_connection(cls):
-        """
-        Get a connection from the pool (context manager)
-
-        Usage:
-            with Database.get_connection() as conn:
-                cursor = conn.cursor()
-                cursor.execute("SELECT * FROM patients")
-        """
         if cls._pool is None:
             raise Exception("Database pool not initialized. Call Database.initialize() first.")
-
         conn = None
         try:
             conn = cls._pool.getconn()
             yield conn
-            conn.commit()  # Auto-commit on success
+            conn.commit()
         except Exception as e:
             if conn:
-                conn.rollback()  # Rollback on error
+                conn.rollback()
             logger.error(f"Database error: {e}")
             raise
         finally:
@@ -74,29 +70,16 @@ class Database:
 
     @classmethod
     def execute(cls, query: str, params: tuple = None, fetch: str = "all") -> Optional[List[Dict]]:
-        """
-        Execute a query and return results
-
-        Args:
-            query: SQL query
-            params: Query parameters (tuple)
-            fetch: "all", "one", or "none"
-
-        Returns:
-            List of dictionaries (fetch="all"), single dictionary (fetch="one"), or None
-        """
         with cls.get_connection() as conn:
             cursor = conn.cursor(cursor_factory=RealDictCursor)
             cursor.execute(query, params)
-
             if fetch == "all":
                 result = cursor.fetchall()
-                return [cls._serialize_row(dict(row)) for row in result] if result else []
+                return [dict(row) for row in result] if result else []
             elif fetch == "one":
                 result = cursor.fetchone()
-                return cls._serialize_row(dict(result)) if result else None
+                return dict(result) if result else None
             else:
-                # fetch="none" for INSERT/UPDATE/DELETE
                 return None
 
     @staticmethod
@@ -108,8 +91,7 @@ class Database:
         return row
 
     @classmethod
-    def close(cls):
-        """Close all database connections"""
+     def close(cls):
         if cls._pool:
             cls._pool.closeall()
             logger.info("✅ Database connections closed")
