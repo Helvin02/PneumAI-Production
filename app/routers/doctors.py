@@ -8,7 +8,7 @@ from typing import List
 import logging
 
 from app.models.schemas import DoctorCreate, DoctorResponse
-from app.database import get_all_doctors, get_doctor, create_doctor
+from app.database import get_all_doctors, get_doctor, create_doctor, delete_doctor
 from app.utils.helpers import generate_doctor_id
 from app.utils.security import (
     validate_email,
@@ -93,9 +93,16 @@ async def register_doctor(doctor: DoctorCreate):
             'name': name,
             'email': doctor.email.lower(),
             'phone': doctor.phone,
-            'specialization': specialization,
+            'specialty': specialization, # Use 'specialty' to match DB schema
             'licenseNumber': license_number,
-            'passwordHash': password_hash
+            'passwordHash': password_hash,
+            # Add default/optional fields for congruency
+            'availability': doctor.availability if hasattr(doctor, 'availability') else 'Available by appointment',
+            'years_of_experience': doctor.years_of_experience if hasattr(doctor, 'years_of_experience') else 0,
+            'bio': doctor.bio if hasattr(doctor, 'bio') else '',
+            'profile_image_url': doctor.image if hasattr(doctor, 'image') else None,
+            'is_accepting_patients': True,
+            'is_verified': False # Admins must verify
         }
 
         # Create doctor
@@ -113,3 +120,19 @@ async def register_doctor(doctor: DoctorCreate):
         if "unique constraint" in str(e).lower() or "duplicate key" in str(e).lower():
             raise HTTPException(status_code=409, detail="Email already exists")
         raise HTTPException(status_code=500, detail="Failed to register doctor")
+
+
+@router.delete("/{doctor_id}", status_code=204)
+async def delete_doctor_endpoint(doctor_id: str):
+    """
+    Delete a doctor
+    """
+    try:
+        success = delete_doctor(doctor_id)
+        if not success:
+            raise HTTPException(status_code=404, detail=f"Doctor not found: {doctor_id}")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error deleting doctor {doctor_id}: {e}")
+        raise HTTPException(status_code=500, detail="Failed to delete doctor")

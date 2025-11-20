@@ -80,7 +80,7 @@ class PatientBase(BaseModel):
 
 class PatientCreate(PatientBase):
     """Schema for creating a patient"""
-    pass
+    password: str = Field(..., min_length=8)
 
 
 class PatientUpdate(BaseModel):

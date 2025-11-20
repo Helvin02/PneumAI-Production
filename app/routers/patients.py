@@ -80,6 +80,10 @@ async def create_new_patient(patient: PatientCreate):
         # Generate patient ID
         patient_id = generate_patient_id(name)
 
+        # Hash password
+        from app.utils.security import hash_password
+        password_hash = hash_password(patient.password)
+
         # Prepare patient data
         patient_data = {
             'id': patient_id,
@@ -88,7 +92,8 @@ async def create_new_patient(patient: PatientCreate):
             'phone': patient.phone,
             'dateOfBirth': patient.dateOfBirth.isoformat() if patient.dateOfBirth else None,
             'gender': patient.gender,
-            'medicalHistory': medical_history
+            'medicalHistory': medical_history,
+            'passwordHash': password_hash
         }
 
         # Create patient

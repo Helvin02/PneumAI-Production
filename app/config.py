@@ -34,7 +34,7 @@ class Settings:
         "SECRET_KEY",
         "dev-secret-key-change-in-production-min-32-chars"
     )
-    UPLOAD_DIR: Path = Path(os.getenv("UPLOAD_DIR", "/Users/monskiemonmon427/YOLO12ELCDPPCC-1/uploads"))
+    UPLOAD_DIR: Path = Path(os.getenv("UPLOAD_DIR", "./uploads"))
     MAX_UPLOAD_SIZE_MB: int = int(os.getenv("MAX_UPLOAD_SIZE_MB", "50"))
     MAX_UPLOAD_SIZE_BYTES: int = MAX_UPLOAD_SIZE_MB * 1024 * 1024
 

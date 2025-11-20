@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Layers, Shield, UserPlus, Users, CheckCircle, ArrowRight, Lock, Mail, User } from 'lucide-react';
 import './Login.css';
 import { authenticateUser, createSession } from './utils/unifiedDataManager';
+import { api } from './services/api';
 
 const Login = ({ onClose, onLogin, onRegister }) => {
   const [activeTab, setActiveTab] = useState('patient');
@@ -23,17 +24,17 @@ const Login = ({ onClose, onLogin, onRegister }) => {
     if (error) setError('');
   };
 
-  const handleLoginSubmit = (e) => {
+  const handleLoginSubmit = async (e) => {
     e.preventDefault();
-    
+
     // Basic validation
     if (!formData.email.trim() || !formData.password.trim()) {
       setError('Please enter both email and password');
       return;
     }
-    
+
     setIsSubmitting(true);
-    
+
     // Check if we're logging in as admin (for demo purposes)
     if (activeTab === 'doctor' && formData.email === 'admin@pneumai.com' && formData.password === 'admin123') {
       setTimeout(() => {
@@ -51,28 +52,37 @@ const Login = ({ onClose, onLogin, onRegister }) => {
     }
 
     try {
-      // Authenticate using unified data manager
-      const user = authenticateUser(formData.email, formData.password, activeTab);
-      
+      // Authenticate using backend API
+      const response = await api.login(formData.email, formData.password, activeTab);
+
+      // Map response to unifiedDataManager format for compatibility
+      const nameParts = response.name.split(' ');
+      const firstName = nameParts[0];
+      const lastName = nameParts.slice(1).join(' ') || '';
+
+      const user = {
+        id: response.user_id,
+        firstName: firstName,
+        lastName: lastName,
+        email: response.email,
+        userType: response.role,
+        username: response.name,
+        sessionToken: response.session_token
+      };
+
       setTimeout(() => {
         setIsSubmitting(false);
-        
-        if (user) {
-          // Create session
-          createSession({
-            ...user,
-            username: `${user.firstName} ${user.lastName}`
-          });
-          // Login successful
-          onLogin(user.userType, `${user.firstName} ${user.lastName}`);
-        } else {
-          // Login failed
-          setError('Invalid email or password for this account type');
-        }
-      }, 1000);
+
+        // Create session (stores in localStorage for other components)
+        createSession(user);
+
+        // Login successful
+        onLogin(user.userType, user.username);
+      }, 500);
+
     } catch (err) {
       setIsSubmitting(false);
-      setError('Login error. Please try again.');
+      setError(err.message || 'Invalid email or password for this account type');
       console.error('Login error:', err);
     }
   };
@@ -93,13 +103,13 @@ const Login = ({ onClose, onLogin, onRegister }) => {
               <img src="/assets/logo-medic.jpg" alt="PneumAI" style={{ width: '50px', height: '50px', borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(255, 255, 255, 0.5)' }} />
               <h2 style={{ marginLeft: '10px', fontSize: '1.5rem' }}>PneumAI</h2>
             </div>
-            
+
             <h1 className="login-info-title">Supporting Lung Cancer Detection and Care</h1>
             <p className="login-info-description">
               PneumAI combines AI-assisted analysis with comprehensive emotional support
               for patients and helpful clinical insights for healthcare professionals.
             </p>
-            
+
             <div className="login-features">
               <div className="login-feature">
                 <div className="login-feature-icon">
@@ -107,14 +117,14 @@ const Login = ({ onClose, onLogin, onRegister }) => {
                 </div>
                 <div>AI-assisted CT scan analysis to support healthcare professionals</div>
               </div>
-              
+
               <div className="login-feature">
                 <div className="login-feature-icon">
                   <Users size={20} />
                 </div>
                 <div>Connect with support communities and resources</div>
               </div>
-              
+
               <div className="login-feature">
                 <div className="login-feature-icon">
                   <CheckCircle size={20} />
@@ -124,7 +134,7 @@ const Login = ({ onClose, onLogin, onRegister }) => {
             </div>
           </div>
         </div>
-        
+
         {/* Right Side Login/Register Form */}
         <div className="login-form-container">
           <div className="login-form-header">
@@ -137,95 +147,95 @@ const Login = ({ onClose, onLogin, onRegister }) => {
               {isLogin ? 'Enter your credentials below' : 'Fill in your information to get started'}
             </p>
           </div>
-          
+
           {/* User Type Tabs */}
           <div className="login-tabs">
-            <div 
+            <div
               className={`login-tab ${activeTab === 'patient' ? 'active' : ''}`}
               onClick={() => setActiveTab('patient')}
             >
               Patient
             </div>
-            <div 
+            <div
               className={`login-tab ${activeTab === 'doctor' ? 'active' : ''}`}
               onClick={() => setActiveTab('doctor')}
             >
               Healthcare Professional
             </div>
           </div>
-          
+
           {/* Login Form */}
           {isLogin ? (
             <form className="login-form" onSubmit={handleLoginSubmit}>
               {error && (
-                <div style={{ 
-                  padding: '0.75rem', 
-                  backgroundColor: '#fee2e2', 
-                  color: '#dc2626', 
+                <div style={{
+                  padding: '0.75rem',
+                  backgroundColor: '#fee2e2',
+                  color: '#dc2626',
                   borderRadius: '0.375rem',
                   marginBottom: '1rem'
                 }}>
                   {error}
                 </div>
               )}
-              
+
               <div className="form-group">
                 <label className="form-label">Email</label>
                 <div style={{ position: 'relative' }}>
-                  <Mail 
-                    size={18} 
-                    style={{ 
+                  <Mail
+                    size={18}
+                    style={{
                       position: 'absolute',
                       left: '12px',
                       top: '13px',
                       color: '#6b7280'
                     }}
                   />
-                  <input 
-                    type="email" 
+                  <input
+                    type="email"
                     name="email"
                     value={formData.email}
                     onChange={handleChange}
-                    className="form-input" 
-                    placeholder="name@example.com" 
+                    className="form-input"
+                    placeholder="name@example.com"
                     style={{ paddingLeft: '40px' }}
                   />
                 </div>
               </div>
-              
+
               <div className="form-group">
                 <label className="form-label">Password</label>
                 <div style={{ position: 'relative' }}>
-                  <Lock 
-                    size={18} 
-                    style={{ 
+                  <Lock
+                    size={18}
+                    style={{
                       position: 'absolute',
                       left: '12px',
                       top: '13px',
                       color: '#6b7280'
                     }}
                   />
-                  <input 
-                    type="password" 
+                  <input
+                    type="password"
                     name="password"
                     value={formData.password}
                     onChange={handleChange}
-                    className="form-input" 
+                    className="form-input"
                     placeholder="••••••••"
                     style={{ paddingLeft: '40px' }}
                   />
                 </div>
                 <a href="#" className="form-forgot-password">Forgot password?</a>
               </div>
-              
-              <button 
-                type="submit" 
+
+              <button
+                type="submit"
                 className="form-button"
                 disabled={isSubmitting}
               >
                 {isSubmitting ? 'Signing in...' : 'Sign in'}
               </button>
-              
+
               <div className="form-register">
                 Don't have an account?
                 <a href="#" className="form-register-link" onClick={(e) => {
@@ -237,8 +247,8 @@ const Login = ({ onClose, onLogin, onRegister }) => {
               </div>
 
               {activeTab === 'doctor' && (
-                <div style={{ 
-                  marginTop: '1rem', 
+                <div style={{
+                  marginTop: '1rem',
                   padding: '0.75rem',
                   backgroundColor: '#dbeafe',
                   borderRadius: '0.375rem',
@@ -255,98 +265,98 @@ const Login = ({ onClose, onLogin, onRegister }) => {
               <div className="form-group">
                 <label className="form-label">Full Name</label>
                 <div style={{ position: 'relative' }}>
-                  <User 
-                    size={18} 
-                    style={{ 
+                  <User
+                    size={18}
+                    style={{
                       position: 'absolute',
                       left: '12px',
                       top: '13px',
                       color: '#6b7280'
                     }}
                   />
-                  <input 
-                    type="text" 
-                    className="form-input" 
-                    placeholder="John Doe" 
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder="John Doe"
                     style={{ paddingLeft: '40px' }}
                   />
                 </div>
               </div>
-              
+
               <div className="form-group">
                 <label className="form-label">Email</label>
                 <div style={{ position: 'relative' }}>
-                  <Mail 
-                    size={18} 
-                    style={{ 
+                  <Mail
+                    size={18}
+                    style={{
                       position: 'absolute',
                       left: '12px',
                       top: '13px',
                       color: '#6b7280'
                     }}
                   />
-                  <input 
-                    type="email" 
-                    className="form-input" 
-                    placeholder="name@example.com" 
+                  <input
+                    type="email"
+                    className="form-input"
+                    placeholder="name@example.com"
                     style={{ paddingLeft: '40px' }}
                   />
                 </div>
               </div>
-              
+
               <div className="form-group">
                 <label className="form-label">Password</label>
                 <div style={{ position: 'relative' }}>
-                  <Lock 
-                    size={18} 
-                    style={{ 
+                  <Lock
+                    size={18}
+                    style={{
                       position: 'absolute',
                       left: '12px',
                       top: '13px',
                       color: '#6b7280'
                     }}
                   />
-                  <input 
-                    type="password" 
-                    className="form-input" 
+                  <input
+                    type="password"
+                    className="form-input"
                     placeholder="••••••••"
                     style={{ paddingLeft: '40px' }}
                   />
                 </div>
               </div>
-              
+
               {activeTab === 'doctor' && (
                 <div className="form-group">
                   <label className="form-label">Medical License Number</label>
                   <div style={{ position: 'relative' }}>
-                    <Shield 
-                      size={18} 
-                      style={{ 
+                    <Shield
+                      size={18}
+                      style={{
                         position: 'absolute',
                         left: '12px',
                         top: '13px',
                         color: '#6b7280'
                       }}
                     />
-                    <input 
-                      type="text" 
-                      className="form-input" 
-                      placeholder="License Number" 
+                    <input
+                      type="text"
+                      className="form-input"
+                      placeholder="License Number"
                       style={{ paddingLeft: '40px' }}
                     />
                   </div>
                 </div>
               )}
-              
+
               <div className="form-checkbox-group">
                 <input type="checkbox" className="form-checkbox" id="terms" />
                 <label htmlFor="terms" className="form-checkbox-label">
                   I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>
                 </label>
               </div>
-              
-              <button 
-                type="button" 
+
+              <button
+                type="button"
                 className="form-button"
                 onClick={(e) => {
                   e.preventDefault();
@@ -355,7 +365,7 @@ const Login = ({ onClose, onLogin, onRegister }) => {
               >
                 Create Account
               </button>
-              
+
               <div className="form-register">
                 Already have an account?
                 <a href="#" className="form-register-link" onClick={(e) => {

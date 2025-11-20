@@ -21,7 +21,9 @@ export const WebSocketProvider = ({ children }) => {
 
   const connect = useCallback(() => {
     try {
-      const ws = new WebSocket('ws://localhost:8000/ws/scans');
+      // Use environment variable or fallback to localhost for development
+      const wsUrl = process.env.REACT_APP_WS_URL || 'ws://localhost:8000/ws/scans';
+      const ws = new WebSocket(wsUrl);
 
       ws.onopen = () => {
         console.log('✓ WebSocket connected');
@@ -31,7 +33,7 @@ export const WebSocketProvider = ({ children }) => {
         // Send ping every 30 seconds to keep connection alive
         const pingInterval = setInterval(() => {
           if (ws.readyState === WebSocket.OPEN) {
-            ws.send('ping');
+            ws.send(JSON.stringify({ type: 'ping' }));
           }
         }, 30000);
 
@@ -42,7 +44,12 @@ export const WebSocketProvider = ({ children }) => {
         try {
           const data = JSON.parse(event.data);
           console.log('WebSocket message received:', data);
-          setLastMessage(data);
+          // Handle different message types
+          if (data.type === 'pong') {
+            console.log('✓ WebSocket pong received');
+          } else {
+            setLastMessage(data);
+          }
         } catch (error) {
           console.error('Error parsing WebSocket message:', error);
         }
@@ -52,8 +59,8 @@ export const WebSocketProvider = ({ children }) => {
         console.error('WebSocket error:', error);
       };
 
-      ws.onclose = () => {
-        console.log('WebSocket disconnected');
+      ws.onclose = (event) => {
+        console.log('WebSocket disconnected', event.code, event.reason);
         setIsConnected(false);
 
         if (ws.pingInterval) {

@@ -4,10 +4,24 @@
  */
 
 import CryptoJS from 'crypto-js';
+import { getCurrentSession } from '../utils/unifiedDataManager';
 
 const S3_BUCKET = process.env.REACT_APP_S3_BUCKET || 'pneumai-scans';
 const S3_REGION = process.env.REACT_APP_S3_REGION || 'us-east-1';
-const API_ENDPOINT = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+const API_ENDPOINT = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+
+/**
+ * Helper to get auth headers
+ */
+const getAuthHeaders = () => {
+  const session = getCurrentSession();
+  if (session && session.sessionToken) {
+    return {
+      'Authorization': `Bearer ${session.sessionToken}`
+    };
+  }
+  return {};
+};
 
 /**
  * Generate SHA-256 hash of an image file
@@ -107,6 +121,7 @@ export const getPresignedUploadUrl = async (fileName, fileType, fileHash) => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        ...getAuthHeaders()
       },
       body: JSON.stringify({
         fileName,
@@ -241,6 +256,7 @@ export const checkDuplicateImage = async (fileHash) => {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
+        ...getAuthHeaders()
       },
     });
 

@@ -1,7 +1,4 @@
-/**
- * YOLOv12 API Service
- * Handles all communication with the YOLOv12 backend for lung cancer detection
- */
+import { getCurrentSession } from '../utils/unifiedDataManager';
 
 const API_BASE_URL = process.env.REACT_APP_YOLO_API_URL || '';
 
@@ -21,6 +18,14 @@ const ensureAbsoluteUrl = (url) => {
 };
 
 /**
+ * Helper to get auth token
+ */
+const getAuthToken = () => {
+  const session = getCurrentSession();
+  return session?.sessionToken;
+};
+
+/**
  * Upload CT scan image for analysis
  * @param {File} file - The CT scan image file (DICOM, NIFTI, JPEG, or PNG)
  * @param {Function} onProgress - Callback for upload progress (0-100)
@@ -36,12 +41,16 @@ export const uploadScanForAnalysis = async (file, onProgress, patientId = null) 
     }
     formData.append('timestamp', new Date().toISOString());
 
+    const headers = {};
+    const token = getAuthToken();
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
     const response = await fetch(`${API_BASE_URL}/api/v1/scans/analyze`, {
       method: 'POST',
       body: formData,
-      headers: {
-        // Don't set Content-Type - browser will set it with boundary for FormData
-      },
+      headers: headers,
     });
 
     if (!response.ok) {
@@ -137,6 +146,13 @@ export const uploadScanWithProgress = (file, onProgress, patientId = null) => {
 
     // Send request
     xhr.open('POST', `${API_BASE_URL}/api/v1/scans/analyze`);
+
+    // Add auth header
+    const token = getAuthToken();
+    if (token) {
+      xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+    }
+
     xhr.send(formData);
   });
 };
@@ -148,11 +164,17 @@ export const uploadScanWithProgress = (file, onProgress, patientId = null) => {
  */
 export const getScanResult = async (scanId) => {
   try {
+    const headers = {
+      'Content-Type': 'application/json',
+    };
+    const token = getAuthToken();
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
     const response = await fetch(`${API_BASE_URL}/api/v1/scans/${scanId}`, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: headers,
     });
 
     if (!response.ok) {
@@ -173,11 +195,17 @@ export const getScanResult = async (scanId) => {
  */
 export const getPatientScans = async (patientId) => {
   try {
+    const headers = {
+      'Content-Type': 'application/json',
+    };
+    const token = getAuthToken();
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
     const response = await fetch(`${API_BASE_URL}/api/v1/scans/patient/${patientId}/scans`, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: headers,
     });
 
     if (!response.ok) {
@@ -208,9 +236,16 @@ export const uploadBatchScans = async (files, onProgress) => {
     formData.append('timestamp', new Date().toISOString());
     formData.append('batch', 'true');
 
+    const headers = {};
+    const token = getAuthToken();
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
     const response = await fetch(`${API_BASE_URL}/api/v1/scans/batch-analyze`, {
       method: 'POST',
       body: formData,
+      headers: headers,
     });
 
     if (!response.ok) {
@@ -231,8 +266,15 @@ export const uploadBatchScans = async (files, onProgress) => {
  */
 export const getDetectionThresholds = async () => {
   try {
+    const headers = {};
+    const token = getAuthToken();
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
     const response = await fetch(`${API_BASE_URL}/api/v1/config/thresholds`, {
       method: 'GET',
+      headers: headers,
     });
 
     if (!response.ok) {

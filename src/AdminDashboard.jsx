@@ -17,6 +17,7 @@ import {
 } from './utils/unifiedDataManager';
 import ScanCommentForm from './components/ScanCommentForm';
 import ScanCommentThread from './components/ScanCommentThread';
+import { doctorAPI } from './services/apiService';
 
 const AdminDashboard = ({ username, onLogout, onToggleDashboardStyle }) => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -40,19 +41,38 @@ const AdminDashboard = ({ username, onLogout, onToggleDashboardStyle }) => {
     loadData();
   }, []);
 
-  const loadData = () => {
-    setDoctors(getAllDoctors());
+  const loadData = async () => {
+    try {
+      const doctorsResponse = await doctorAPI.getAll();
+      const doctorsList = Array.isArray(doctorsResponse) ? doctorsResponse : (doctorsResponse.doctors || []);
+      setDoctors(doctorsList);
+    } catch (error) {
+      console.error("Failed to fetch doctors from API, falling back to local storage:", error);
+      setDoctors(getAllDoctors());
+    }
+
     setPatients(getAllPatients());
     setScans(getAllScans());
     setStats(getDashboardStats());
   };
 
-  const handleCreateDoctor = (e) => {
+  const handleCreateDoctor = async (e) => {
     e.preventDefault();
 
     try {
-      createDoctor(newDoctor);
-      loadData(); // Reload data after creation
+      // Map frontend fields to backend schema
+      const doctorData = {
+        name: newDoctor.name,
+        email: newDoctor.email,
+        password: newDoctor.password,
+        specialization: newDoctor.specialty, // Map specialty to specialization
+        phone: newDoctor.phone,
+        image: newDoctor.image,
+        license_number: '', // Optional field
+      };
+
+      await doctorAPI.create(doctorData);
+      await loadData(); // Reload data after creation
       alert(`Doctor ${newDoctor.name} created successfully!`);
       setShowDoctorModal(false);
       setNewDoctor({
@@ -68,11 +88,11 @@ const AdminDashboard = ({ username, onLogout, onToggleDashboardStyle }) => {
     }
   };
 
-  const handleDeleteDoctor = (doctorId) => {
+  const handleDeleteDoctor = async (doctorId) => {
     if (window.confirm('Are you sure you want to delete this doctor?')) {
       try {
-        deleteDoctor(doctorId);
-        loadData(); // Reload data after deletion
+        await doctorAPI.delete(doctorId);
+        await loadData(); // Reload data after deletion
         alert('Doctor deleted successfully!');
       } catch (error) {
         alert(`Error deleting doctor: ${error.message}`);
@@ -139,11 +159,11 @@ const AdminDashboard = ({ username, onLogout, onToggleDashboardStyle }) => {
             </div>
           </div>
         </div>
-        
+
         <div className="dashboard-main-container">
           <div className="dashboard-sidebar">
             <div className="sidebar-menu">
-              <button 
+              <button
                 className={`sidebar-item ${activeTab === 'dashboard' ? 'active' : ''}`}
                 onClick={() => setActiveTab('dashboard')}
               >
@@ -164,28 +184,28 @@ const AdminDashboard = ({ username, onLogout, onToggleDashboardStyle }) => {
                 <Stethoscope className="sidebar-icon" />
                 <span>Doctors</span>
               </button>
-              <button 
+              <button
                 className={`sidebar-item ${activeTab === 'scans' ? 'active' : ''}`}
                 onClick={() => setActiveTab('scans')}
               >
                 <Layers className="sidebar-icon" />
                 <span>CT Scans</span>
               </button>
-              <button 
+              <button
                 className={`sidebar-item ${activeTab === 'reports' ? 'active' : ''}`}
                 onClick={() => setActiveTab('reports')}
               >
                 <FileText className="sidebar-icon" />
                 <span>Reports</span>
               </button>
-              <button 
+              <button
                 className={`sidebar-item ${activeTab === 'settings' ? 'active' : ''}`}
                 onClick={() => setActiveTab('settings')}
               >
                 <Settings className="sidebar-icon" />
                 <span>Settings</span>
               </button>
-              <button 
+              <button
                 className={`sidebar-item ${activeTab === 'help' ? 'active' : ''}`}
                 onClick={() => setActiveTab('help')}
               >
@@ -200,7 +220,7 @@ const AdminDashboard = ({ username, onLogout, onToggleDashboardStyle }) => {
               </button>
             </div>
           </div>
-          
+
           <div className="dashboard-content">
             {activeTab === 'dashboard' && (
               <>
@@ -448,54 +468,53 @@ const AdminDashboard = ({ username, onLogout, onToggleDashboardStyle }) => {
                   </div>
                   <button className="admin-button">Add New Patient</button>
                 </div>
-            
-            <div className="admin-table-container">
-              <table className="admin-table">
-                <thead>
-                  <tr>
-                    <th>Patient ID</th>
-                    <th>Full Name</th>
-                    <th>Age</th>
-                    <th>Last Visit</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {patients.length > 0 ? (
-                    patients.map(patient => (
-                      <tr key={patient.id}>
-                        <td>{patient.id}</td>
-                        <td>{patient.fullName}</td>
-                        <td>{patient.age}</td>
-                        <td>{patient.lastVisit}</td>
-                        <td>
-                          <span className={`status-badge ${
-                            patient.status === 'Urgent' ? 'danger' :
-                            patient.status === 'Follow-up Required' ? 'warning' : 'success'
-                          }`}>
-                            {patient.status}
-                          </span>
-                        </td>
-                        <td>
-                          <div className="action-buttons">
-                            <button className="table-action-button">View</button>
-                            <button className="table-action-button">Edit</button>
-                          </div>
-                        </td>
+
+                <div className="admin-table-container">
+                  <table className="admin-table">
+                    <thead>
+                      <tr>
+                        <th>Patient ID</th>
+                        <th>Full Name</th>
+                        <th>Age</th>
+                        <th>Last Visit</th>
+                        <th>Status</th>
+                        <th>Actions</th>
                       </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan="6" style={{ textAlign: 'center', padding: '2rem' }}>
-                        No patients found. Click "Initialize Demo Data" on the dashboard to add demo patients.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-            
+                    </thead>
+                    <tbody>
+                      {patients.length > 0 ? (
+                        patients.map(patient => (
+                          <tr key={patient.id}>
+                            <td>{patient.id}</td>
+                            <td>{patient.fullName}</td>
+                            <td>{patient.age}</td>
+                            <td>{patient.lastVisit}</td>
+                            <td>
+                              <span className={`status-badge ${patient.status === 'Urgent' ? 'danger' :
+                                patient.status === 'Follow-up Required' ? 'warning' : 'success'
+                                }`}>
+                                {patient.status}
+                              </span>
+                            </td>
+                            <td>
+                              <div className="action-buttons">
+                                <button className="table-action-button">View</button>
+                                <button className="table-action-button">Edit</button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan="6" style={{ textAlign: 'center', padding: '2rem' }}>
+                            No patients found. Click "Initialize Demo Data" on the dashboard to add demo patients.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+
                 <div className="pagination">
                   <button className="pagination-button active">1</button>
                   <button className="pagination-button">2</button>
@@ -630,12 +649,11 @@ const AdminDashboard = ({ username, onLogout, onToggleDashboardStyle }) => {
                                   <td>{scan.patientId}</td>
                                   <td>{formatDate(scan.uploadTime)}</td>
                                   <td>
-                                    <span className={`status-badge ${
-                                      scan.results?.riskLevel === 'none' ? 'success' :
+                                    <span className={`status-badge ${scan.results?.riskLevel === 'none' ? 'success' :
                                       scan.results?.riskLevel === 'low' ? 'info' :
-                                      scan.results?.riskLevel === 'medium' ? 'warning' :
-                                      scan.results?.riskLevel === 'high' ? 'danger' : ''
-                                    }`}>
+                                        scan.results?.riskLevel === 'medium' ? 'warning' :
+                                          scan.results?.riskLevel === 'high' ? 'danger' : ''
+                                      }`}>
                                       {(scan.results?.riskLevel || 'unknown').toUpperCase()}
                                     </span>
                                   </td>
@@ -1137,7 +1155,7 @@ const AdminDashboard = ({ username, onLogout, onToggleDashboardStyle }) => {
                     type="text"
                     id="doctor-name"
                     value={newDoctor.name}
-                    onChange={(e) => setNewDoctor({...newDoctor, name: e.target.value})}
+                    onChange={(e) => setNewDoctor({ ...newDoctor, name: e.target.value })}
                     required
                     placeholder="Dr. John Smith"
                   />
@@ -1148,7 +1166,7 @@ const AdminDashboard = ({ username, onLogout, onToggleDashboardStyle }) => {
                   <select
                     id="doctor-specialty"
                     value={newDoctor.specialty}
-                    onChange={(e) => setNewDoctor({...newDoctor, specialty: e.target.value})}
+                    onChange={(e) => setNewDoctor({ ...newDoctor, specialty: e.target.value })}
                     required
                   >
                     <option value="">Select Role</option>
@@ -1168,7 +1186,7 @@ const AdminDashboard = ({ username, onLogout, onToggleDashboardStyle }) => {
                     type="email"
                     id="doctor-email"
                     value={newDoctor.email}
-                    onChange={(e) => setNewDoctor({...newDoctor, email: e.target.value})}
+                    onChange={(e) => setNewDoctor({ ...newDoctor, email: e.target.value })}
                     required
                     placeholder="doctor@pneumai.com"
                   />
@@ -1180,7 +1198,7 @@ const AdminDashboard = ({ username, onLogout, onToggleDashboardStyle }) => {
                     type="tel"
                     id="doctor-phone"
                     value={newDoctor.phone}
-                    onChange={(e) => setNewDoctor({...newDoctor, phone: e.target.value})}
+                    onChange={(e) => setNewDoctor({ ...newDoctor, phone: e.target.value })}
                     placeholder="+1 (555) 123-4567"
                   />
                 </div>
@@ -1193,7 +1211,7 @@ const AdminDashboard = ({ username, onLogout, onToggleDashboardStyle }) => {
                     type="password"
                     id="doctor-password"
                     value={newDoctor.password}
-                    onChange={(e) => setNewDoctor({...newDoctor, password: e.target.value})}
+                    onChange={(e) => setNewDoctor({ ...newDoctor, password: e.target.value })}
                     required
                     placeholder="Minimum 8 characters"
                     minLength="8"
@@ -1205,7 +1223,7 @@ const AdminDashboard = ({ username, onLogout, onToggleDashboardStyle }) => {
                   <select
                     id="doctor-image"
                     value={newDoctor.image}
-                    onChange={(e) => setNewDoctor({...newDoctor, image: e.target.value})}
+                    onChange={(e) => setNewDoctor({ ...newDoctor, image: e.target.value })}
                   >
                     <option value="">Select Image</option>
                     <option value="/assets/ai-doc1.jpg">AI Doctor 1</option>
@@ -1324,12 +1342,11 @@ const AdminDashboard = ({ username, onLogout, onToggleDashboardStyle }) => {
                 <div style={{ background: '#f9fafb', borderRadius: '8px', padding: '1.5rem' }}>
                   <div style={{ marginBottom: '1rem' }}>
                     <h4 style={{ margin: '0 0 0.5rem 0', color: '#6b7280', fontSize: '0.875rem', fontWeight: '600', textTransform: 'uppercase' }}>Risk Level</h4>
-                    <span className={`status-badge ${
-                      selectedScan.results?.riskLevel === 'none' ? 'success' :
+                    <span className={`status-badge ${selectedScan.results?.riskLevel === 'none' ? 'success' :
                       selectedScan.results?.riskLevel === 'low' ? 'info' :
-                      selectedScan.results?.riskLevel === 'medium' ? 'warning' :
-                      selectedScan.results?.riskLevel === 'high' ? 'danger' : ''
-                    }`} style={{ fontSize: '1rem', padding: '0.5rem 1rem' }}>
+                        selectedScan.results?.riskLevel === 'medium' ? 'warning' :
+                          selectedScan.results?.riskLevel === 'high' ? 'danger' : ''
+                      }`} style={{ fontSize: '1rem', padding: '0.5rem 1rem' }}>
                       {(selectedScan.results?.riskLevel || 'unknown').toUpperCase()}
                     </span>
                   </div>
@@ -1373,7 +1390,7 @@ const AdminDashboard = ({ username, onLogout, onToggleDashboardStyle }) => {
                 }}
                 onSuccess={() => {
                   // Refresh comments by re-rendering
-                  setSelectedScan({...selectedScan});
+                  setSelectedScan({ ...selectedScan });
                 }}
               />
 

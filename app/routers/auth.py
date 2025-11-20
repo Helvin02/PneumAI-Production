@@ -86,13 +86,52 @@ async def login(credentials: LoginRequest):
                 session_token=session_token
             )
 
-        # Patient login (placeholder - implement when patients have password_hash)
+        # Patient login
         elif credentials.role.value == "patient":
-            # TODO: Implement patient authentication
-            # For now, return error
-            raise HTTPException(
-                status_code=501,
-                detail="Patient login not yet implemented"
+            from app.database import get_patient_by_email
+            patient = get_patient_by_email(credentials.email)
+
+            if not patient:
+                raise HTTPException(
+                    status_code=401,
+                    detail="Invalid email or password for this account type"
+                )
+
+            # Verify password
+            if not patient.get('password_hash'):
+                # If no password hash, it might be a legacy account or error
+                # For now, allow if we are in a transition phase? No, secure by default.
+                raise HTTPException(
+                    status_code=401,
+                    detail="Account not configured. Please contact administrator."
+                )
+
+            if not verify_password(credentials.password, patient['password_hash']):
+                raise HTTPException(
+                    status_code=401,
+                    detail="Invalid email or password for this account type"
+                )
+
+            # Generate session token
+            session_token = generate_session_token()
+
+            # Store session with patient_id for easy access
+            active_sessions[session_token] = {
+                "user_id": patient['id'],
+                "patient_id": patient['id'],  # Add explicit patient_id
+                "name": patient['name'],
+                "email": patient['email'],
+                "role": "patient"
+            }
+
+            logger.info(f"✅ Patient login successful: {patient['email']}")
+
+            return LoginResponse(
+                user_id=str(patient['id']), # Ensure ID is string for response
+                name=patient['name'],
+                email=patient['email'],
+                role="patient",
+                session_token=session_token
             )
 
         # Admin login (placeholder)

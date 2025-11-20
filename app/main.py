@@ -132,6 +132,7 @@ async def shutdown_event():
 
 # Import routers
 from app.routers import health, auth, patients, doctors, scans, appointments, messages
+from app.routers import websocket
 
 # ============================================================
 # ROOT ENDPOINT
@@ -207,6 +208,13 @@ app.include_router(appointments.router, prefix="/api/v1/appointments", tags=["Ap
 
 # Messages
 app.include_router(messages.router, prefix="/api/v1/messages", tags=["Messages"])
+
+# Storage
+from app.routers import storage
+app.include_router(storage.router, prefix="/api/v1/storage", tags=["Storage"])
+
+# WebSocket endpoints (no prefix needed for WebSocket routes)
+app.include_router(websocket.router, tags=["WebSockets"])
 
 logger.info("✅ All routers registered successfully")
 

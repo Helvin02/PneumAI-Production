@@ -10,8 +10,11 @@ import {
   formatDate,
   getScanCommentCount
 } from './utils/unifiedDataManager';
+import { scanAPI } from './services/apiService';
 
-const DoctorDashboard = ({ username, onLogout }) => {
+import DoctorDashboardModern from './DoctorDashboardModern';
+
+const DoctorDashboardLegacy = ({ username, onLogout, onToggleDashboardStyle }) => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [patients, setPatients] = useState([]);
   const [scans, setScans] = useState([]);
@@ -32,22 +35,27 @@ const DoctorDashboard = ({ username, onLogout }) => {
     loadData();
   }, []);
 
-  const loadData = () => {
-    const allScans = getAllScans();
+  const loadData = async () => {
     const allPatients = getAllPatients();
-
-    console.log('🔍 DoctorDashboard - Loading data:');
-    console.log('📊 Total scans:', allScans.length);
-    console.log('👥 Total patients:', allPatients.length);
-    console.log('🖼️ First scan:', allScans[0]);
-
     setPatients(allPatients);
-    setScans(allScans);
     setStats(getDashboardStats());
 
-    // Auto-select first scan if none selected
-    if (!selectedScan && allScans.length > 0) {
-      setSelectedScan(allScans[0]);
+    try {
+      const response = await scanAPI.getAll();
+      const allScans = Array.isArray(response) ? response : (response.scans || []);
+
+      console.log('🔍 DoctorDashboard - Loading data:');
+      console.log('📊 Total scans:', allScans.length);
+      console.log('👥 Total patients:', allPatients.length);
+
+      setScans(allScans);
+
+      // Auto-select first scan if none selected
+      if (!selectedScan && allScans.length > 0) {
+        setSelectedScan(allScans[0]);
+      }
+    } catch (error) {
+      console.error("Failed to load scans from API", error);
     }
   };
 
@@ -80,6 +88,15 @@ const DoctorDashboard = ({ username, onLogout }) => {
             <span className="doctor-badge">Doctor</span>
           </div>
           <div className="admin-actions">
+            <button
+              className="topbar-button"
+              onClick={onToggleDashboardStyle}
+              title="Switch to Modern Dashboard"
+              style={{ marginRight: '10px', display: 'flex', alignItems: 'center', gap: '5px' }}
+            >
+              <Layers size={16} />
+              <span style={{ fontSize: '12px' }}>Modern View</span>
+            </button>
             <button className="topbar-button">
               <Bell className="topbar-icon" />
             </button>
@@ -234,10 +251,9 @@ const DoctorDashboard = ({ username, onLogout }) => {
                               <td>{scan.patientName}</td>
                               <td>{formatDate(scan.uploadTime)}</td>
                               <td>
-                                <span className={`status-badge ${
-                                  scan.result === 'Reviewed' ? 'success' :
+                                <span className={`status-badge ${scan.result === 'Reviewed' ? 'success' :
                                   scan.result === 'Areas Detected' ? 'warning' : 'info'
-                                }`}>
+                                  }`}>
                                   {scan.result}
                                 </span>
                               </td>
@@ -271,9 +287,8 @@ const DoctorDashboard = ({ username, onLogout }) => {
                           <p>ID: {patient.id} | Age: {patient.age} | Last Visit: {patient.lastVisit}</p>
                         </div>
                         <div className="patient-attention-status">
-                          <span className={`status-badge ${
-                            patient.status === 'Urgent' ? 'danger' : 'warning'
-                          }`}>
+                          <span className={`status-badge ${patient.status === 'Urgent' ? 'danger' : 'warning'
+                            }`}>
                             {patient.status}
                           </span>
                           <button className="action-button-small">View Details</button>
@@ -327,10 +342,9 @@ const DoctorDashboard = ({ username, onLogout }) => {
                               <td>{patient.age}</td>
                               <td>{patient.lastVisit || 'N/A'}</td>
                               <td>
-                                <span className={`status-badge ${
-                                  patient.status === 'Stable' ? 'success' :
+                                <span className={`status-badge ${patient.status === 'Stable' ? 'success' :
                                   patient.status === 'Urgent' ? 'danger' : 'warning'
-                                }`}>
+                                  }`}>
                                   {patient.status || 'N/A'}
                                 </span>
                               </td>
@@ -471,12 +485,12 @@ const DoctorDashboard = ({ username, onLogout }) => {
                                       textTransform: 'uppercase',
                                       letterSpacing: '0.5px',
                                       background: scan.results?.riskLevel === 'high' ? '#fee2e2' :
-                                                 scan.results?.riskLevel === 'medium' ? '#fef3c7' :
-                                                 scan.results?.riskLevel === 'low' ? '#dbeafe' :
-                                                 scan.results?.riskLevel === 'none' ? '#d1fae5' : '#f3f4f6',
+                                        scan.results?.riskLevel === 'medium' ? '#fef3c7' :
+                                          scan.results?.riskLevel === 'low' ? '#dbeafe' :
+                                            scan.results?.riskLevel === 'none' ? '#d1fae5' : '#f3f4f6',
                                       color: scan.results?.riskLevel === 'high' ? '#dc2626' :
-                                            scan.results?.riskLevel === 'medium' ? '#ea580c' :
-                                            scan.results?.riskLevel === 'low' ? '#2563eb' :
+                                        scan.results?.riskLevel === 'medium' ? '#ea580c' :
+                                          scan.results?.riskLevel === 'low' ? '#2563eb' :
                                             scan.results?.riskLevel === 'none' ? '#16a34a' : '#6b7280'
                                     }}>
                                       {scan.results?.riskLevel || 'Unknown'}
@@ -790,6 +804,30 @@ const DoctorDashboard = ({ username, onLogout }) => {
         </div>
       </div>
     </div>
+  );
+};
+
+
+
+const DoctorDashboard = ({ username, onLogout }) => {
+  const [isModern, setIsModern] = useState(true);
+
+  const toggleDashboardStyle = () => {
+    setIsModern(!isModern);
+  };
+
+  return isModern ? (
+    <DoctorDashboardModern
+      username={username}
+      onLogout={onLogout}
+      onToggleDashboardStyle={toggleDashboardStyle}
+    />
+  ) : (
+    <DoctorDashboardLegacy
+      username={username}
+      onLogout={onLogout}
+      onToggleDashboardStyle={toggleDashboardStyle}
+    />
   );
 };
 

@@ -3,7 +3,20 @@
  * Handles API calls to the FastAPI backend
  */
 
+import { getCurrentSession } from '../utils/unifiedDataManager';
+
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+
+// Helper to get auth headers
+const getAuthHeaders = () => {
+  const session = getCurrentSession();
+  if (session && session.sessionToken) {
+    return {
+      'Authorization': `Bearer ${session.sessionToken}`
+    };
+  }
+  return {};
+};
 
 // ============================================================================
 // APPOINTMENT API
@@ -16,6 +29,7 @@ export const appointmentAPI = {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        ...getAuthHeaders()
       },
       body: JSON.stringify(appointmentData),
     });
@@ -30,7 +44,9 @@ export const appointmentAPI = {
 
   // Get appointments for a patient
   getByPatient: async (patientId) => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/appointments/patient/${patientId}`);
+    const response = await fetch(`${API_BASE_URL}/api/v1/appointments/patient/${patientId}`, {
+      headers: getAuthHeaders()
+    });
 
     if (!response.ok) {
       throw new Error('Failed to fetch appointments');
@@ -41,7 +57,9 @@ export const appointmentAPI = {
 
   // Get appointments for a doctor
   getByDoctor: async (doctorId) => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/appointments/doctor/${doctorId}`);
+    const response = await fetch(`${API_BASE_URL}/api/v1/appointments/doctor/${doctorId}`, {
+      headers: getAuthHeaders()
+    });
 
     if (!response.ok) {
       throw new Error('Failed to fetch appointments');
@@ -52,7 +70,9 @@ export const appointmentAPI = {
 
   // Get specific appointment
   getById: async (appointmentId) => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/appointments/${appointmentId}`);
+    const response = await fetch(`${API_BASE_URL}/api/v1/appointments/${appointmentId}`, {
+      headers: getAuthHeaders()
+    });
 
     if (!response.ok) {
       throw new Error('Failed to fetch appointment');
@@ -67,6 +87,7 @@ export const appointmentAPI = {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
+        ...getAuthHeaders()
       },
       body: JSON.stringify(updateData),
     });
@@ -83,6 +104,7 @@ export const appointmentAPI = {
   cancel: async (appointmentId) => {
     const response = await fetch(`${API_BASE_URL}/api/v1/appointments/${appointmentId}`, {
       method: 'DELETE',
+      headers: getAuthHeaders()
     });
 
     if (!response.ok) {
@@ -104,6 +126,7 @@ export const messageAPI = {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        ...getAuthHeaders()
       },
       body: JSON.stringify(messageData),
     });
@@ -118,7 +141,9 @@ export const messageAPI = {
 
   // Get all messages for a user
   getByUser: async (userId) => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/messages/user/${userId}`);
+    const response = await fetch(`${API_BASE_URL}/api/v1/messages/user/${userId}`, {
+      headers: getAuthHeaders()
+    });
 
     if (!response.ok) {
       throw new Error('Failed to fetch messages');
@@ -129,7 +154,9 @@ export const messageAPI = {
 
   // Get conversation between two users
   getConversation: async (user1Id, user2Id) => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/messages/conversation/${user1Id}/${user2Id}`);
+    const response = await fetch(`${API_BASE_URL}/api/v1/messages/conversation/${user1Id}/${user2Id}`, {
+      headers: getAuthHeaders()
+    });
 
     if (!response.ok) {
       throw new Error('Failed to fetch conversation');
@@ -142,6 +169,7 @@ export const messageAPI = {
   markAsRead: async (messageId) => {
     const response = await fetch(`${API_BASE_URL}/api/v1/messages/${messageId}/read`, {
       method: 'PUT',
+      headers: getAuthHeaders()
     });
 
     if (!response.ok) {
@@ -155,6 +183,7 @@ export const messageAPI = {
   delete: async (messageId) => {
     const response = await fetch(`${API_BASE_URL}/api/v1/messages/${messageId}`, {
       method: 'DELETE',
+      headers: getAuthHeaders()
     });
 
     if (!response.ok) {
@@ -176,6 +205,7 @@ export const patientAPI = {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        // No auth headers needed for registration usually, but harmless if added
       },
       body: JSON.stringify(patientData),
     });
@@ -190,7 +220,9 @@ export const patientAPI = {
 
   // Get all patients
   getAll: async () => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/patients`);
+    const response = await fetch(`${API_BASE_URL}/api/v1/patients`, {
+      headers: getAuthHeaders()
+    });
 
     if (!response.ok) {
       throw new Error('Failed to fetch patients');
@@ -201,7 +233,9 @@ export const patientAPI = {
 
   // Get patient by ID
   getById: async (patientId) => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/patients/${patientId}`);
+    const response = await fetch(`${API_BASE_URL}/api/v1/patients/${patientId}`, {
+      headers: getAuthHeaders()
+    });
 
     if (!response.ok) {
       throw new Error('Failed to fetch patient');
@@ -216,6 +250,7 @@ export const patientAPI = {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
+        ...getAuthHeaders()
       },
       body: JSON.stringify(updateData),
     });
@@ -232,6 +267,7 @@ export const patientAPI = {
   delete: async (patientId) => {
     const response = await fetch(`${API_BASE_URL}/api/v1/patients/${patientId}`, {
       method: 'DELETE',
+      headers: getAuthHeaders()
     });
 
     if (!response.ok) {
@@ -249,7 +285,9 @@ export const patientAPI = {
 export const doctorAPI = {
   // Get all doctors
   getAll: async () => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/doctors`);
+    const response = await fetch(`${API_BASE_URL}/api/v1/doctors`, {
+      headers: getAuthHeaders()
+    });
 
     if (!response.ok) {
       throw new Error('Failed to fetch doctors');
@@ -260,7 +298,9 @@ export const doctorAPI = {
 
   // Get doctor by ID
   getById: async (doctorId) => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/doctors/${doctorId}`);
+    const response = await fetch(`${API_BASE_URL}/api/v1/doctors/${doctorId}`, {
+      headers: getAuthHeaders()
+    });
 
     if (!response.ok) {
       throw new Error('Failed to fetch doctor');
@@ -268,6 +308,98 @@ export const doctorAPI = {
 
     return response.json();
   },
+
+  // Create a new doctor
+  create: async (doctorData) => {
+    const response = await fetch(`${API_BASE_URL}/api/v1/doctors/register`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...getAuthHeaders()
+      },
+      body: JSON.stringify(doctorData),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Failed to create doctor');
+    }
+
+    return response.json();
+  },
+
+  // Delete doctor
+  delete: async (doctorId) => {
+    const response = await fetch(`${API_BASE_URL}/api/v1/doctors/${doctorId}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders()
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to delete doctor');
+    }
+
+    return true;
+  },
+};
+
+// ============================================================================
+// SCAN API
+// ============================================================================
+
+export const scanAPI = {
+  // Get all scans (for doctor/admin)
+  getAll: async () => {
+    const response = await fetch(`${API_BASE_URL}/api/v1/scans`, {
+      headers: getAuthHeaders()
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch scans');
+    }
+
+    return response.json();
+  },
+
+  // Get scans for a patient
+  getByPatient: async (patientId) => {
+    const response = await fetch(`${API_BASE_URL}/api/v1/scans/patient/${patientId}/scans`, {
+      headers: getAuthHeaders()
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch patient scans');
+    }
+
+    return response.json();
+  },
+
+  // Get scan by ID
+  getById: async (scanId) => {
+    const response = await fetch(`${API_BASE_URL}/api/v1/scans/${scanId}`, {
+      headers: getAuthHeaders()
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch scan');
+    }
+
+    return response.json();
+  },
+
+  // Delete scan
+  delete: async (scanId) => {
+    const response = await fetch(`${API_BASE_URL}/api/v1/scans/${scanId}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders()
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to delete scan');
+    }
+
+    return response.json();
+  }
 };
 
 export default {
@@ -275,4 +407,5 @@ export default {
   messages: messageAPI,
   patients: patientAPI,
   doctors: doctorAPI,
+  scans: scanAPI,
 };

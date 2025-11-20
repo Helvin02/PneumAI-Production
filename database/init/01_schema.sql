@@ -27,10 +27,10 @@ CREATE TABLE IF NOT EXISTS users (
 );
 
 -- Indexes
-CREATE INDEX idx_users_email ON users(email);
-CREATE INDEX idx_users_role ON users(role);
-CREATE INDEX idx_users_active ON users(is_active) WHERE is_active = TRUE;
-CREATE INDEX idx_users_created_at ON users(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
+CREATE INDEX IF NOT EXISTS idx_users_active ON users(is_active) WHERE is_active = TRUE;
+CREATE INDEX IF NOT EXISTS idx_users_created_at ON users(created_at DESC);
 
 -- ========================================
 -- PATIENTS TABLE
@@ -82,9 +82,9 @@ CREATE TABLE IF NOT EXISTS patients (
 );
 
 -- Indexes
-CREATE INDEX idx_patients_user_id ON patients(user_id);
-CREATE INDEX idx_patients_status ON patients(status);
-CREATE INDEX idx_patients_name ON patients(last_name, first_name);
+CREATE INDEX IF NOT EXISTS idx_patients_user_id ON patients(user_id);
+CREATE INDEX IF NOT EXISTS idx_patients_status ON patients(status);
+CREATE INDEX IF NOT EXISTS idx_patients_name ON patients(last_name, first_name);
 
 -- ========================================
 -- DOCTORS TABLE
@@ -131,9 +131,9 @@ CREATE TABLE IF NOT EXISTS doctors (
 );
 
 -- Indexes
-CREATE INDEX idx_doctors_user_id ON doctors(user_id);
-CREATE INDEX idx_doctors_specialty ON doctors(specialty);
-CREATE INDEX idx_doctors_accepting ON doctors(is_accepting_patients) WHERE is_accepting_patients = TRUE;
+CREATE INDEX IF NOT EXISTS idx_doctors_user_id ON doctors(user_id);
+CREATE INDEX IF NOT EXISTS idx_doctors_specialty ON doctors(specialty);
+CREATE INDEX IF NOT EXISTS idx_doctors_accepting ON doctors(is_accepting_patients) WHERE is_accepting_patients = TRUE;
 
 -- ========================================
 -- CT SCANS TABLE
@@ -201,13 +201,13 @@ CREATE TABLE IF NOT EXISTS ct_scans (
 );
 
 -- Indexes
-CREATE INDEX idx_scans_scan_id ON ct_scans(scan_id);
-CREATE INDEX idx_scans_patient_id ON ct_scans(patient_id);
-CREATE INDEX idx_scans_doctor_id ON ct_scans(doctor_id);
-CREATE INDEX idx_scans_status ON ct_scans(status);
-CREATE INDEX idx_scans_risk_level ON ct_scans(risk_level);
-CREATE INDEX idx_scans_upload_time ON ct_scans(upload_time DESC);
-CREATE INDEX idx_scans_reviewed ON ct_scans(doctor_reviewed);
+CREATE INDEX IF NOT EXISTS idx_scans_scan_id ON ct_scans(scan_id);
+CREATE INDEX IF NOT EXISTS idx_scans_patient_id ON ct_scans(patient_id);
+CREATE INDEX IF NOT EXISTS idx_scans_doctor_id ON ct_scans(doctor_id);
+CREATE INDEX IF NOT EXISTS idx_scans_status ON ct_scans(status);
+CREATE INDEX IF NOT EXISTS idx_scans_risk_level ON ct_scans(risk_level);
+CREATE INDEX IF NOT EXISTS idx_scans_upload_time ON ct_scans(upload_time DESC);
+CREATE INDEX IF NOT EXISTS idx_scans_reviewed ON ct_scans(doctor_reviewed);
 
 -- ========================================
 -- APPOINTMENTS TABLE
@@ -258,11 +258,11 @@ CREATE TABLE IF NOT EXISTS appointments (
 );
 
 -- Indexes
-CREATE INDEX idx_appointments_appointment_id ON appointments(appointment_id);
-CREATE INDEX idx_appointments_patient_id ON appointments(patient_id);
-CREATE INDEX idx_appointments_doctor_id ON appointments(doctor_id);
-CREATE INDEX idx_appointments_date ON appointments(appointment_date, appointment_time);
-CREATE INDEX idx_appointments_status ON appointments(status);
+CREATE INDEX IF NOT EXISTS idx_appointments_appointment_id ON appointments(appointment_id);
+CREATE INDEX IF NOT EXISTS idx_appointments_patient_id ON appointments(patient_id);
+CREATE INDEX IF NOT EXISTS idx_appointments_doctor_id ON appointments(doctor_id);
+CREATE INDEX IF NOT EXISTS idx_appointments_date ON appointments(appointment_date, appointment_time);
+CREATE INDEX IF NOT EXISTS idx_appointments_status ON appointments(status);
 
 -- ========================================
 -- MESSAGES TABLE
@@ -305,12 +305,12 @@ CREATE TABLE IF NOT EXISTS messages (
 );
 
 -- Indexes
-CREATE INDEX idx_messages_message_id ON messages(message_id);
-CREATE INDEX idx_messages_sender_id ON messages(sender_id);
-CREATE INDEX idx_messages_receiver_id ON messages(receiver_id);
-CREATE INDEX idx_messages_thread_id ON messages(thread_id);
-CREATE INDEX idx_messages_created_at ON messages(created_at DESC);
-CREATE INDEX idx_messages_unread ON messages(receiver_id, is_read) WHERE is_read = FALSE;
+CREATE INDEX IF NOT EXISTS idx_messages_message_id ON messages(message_id);
+CREATE INDEX IF NOT EXISTS idx_messages_sender_id ON messages(sender_id);
+CREATE INDEX IF NOT EXISTS idx_messages_receiver_id ON messages(receiver_id);
+CREATE INDEX IF NOT EXISTS idx_messages_thread_id ON messages(thread_id);
+CREATE INDEX IF NOT EXISTS idx_messages_created_at ON messages(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_messages_unread ON messages(receiver_id, is_read) WHERE is_read = FALSE;
 
 -- ========================================
 -- SCAN COMMENTS TABLE
@@ -343,9 +343,9 @@ CREATE TABLE IF NOT EXISTS scan_comments (
 );
 
 -- Indexes
-CREATE INDEX idx_scan_comments_scan_id ON scan_comments(scan_id);
-CREATE INDEX idx_scan_comments_user_id ON scan_comments(user_id);
-CREATE INDEX idx_scan_comments_created_at ON scan_comments(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_scan_comments_scan_id ON scan_comments(scan_id);
+CREATE INDEX IF NOT EXISTS idx_scan_comments_user_id ON scan_comments(user_id);
+CREATE INDEX IF NOT EXISTS idx_scan_comments_created_at ON scan_comments(created_at DESC);
 
 -- ========================================
 -- NOTIFICATIONS TABLE
@@ -385,10 +385,10 @@ CREATE TABLE IF NOT EXISTS notifications (
 );
 
 -- Indexes
-CREATE INDEX idx_notifications_user_id ON notifications(user_id);
-CREATE INDEX idx_notifications_type ON notifications(type);
-CREATE INDEX idx_notifications_created_at ON notifications(created_at DESC);
-CREATE INDEX idx_notifications_unread ON notifications(user_id, is_read) WHERE is_read = FALSE;
+CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications(user_id);
+CREATE INDEX IF NOT EXISTS idx_notifications_type ON notifications(type);
+CREATE INDEX IF NOT EXISTS idx_notifications_created_at ON notifications(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_notifications_unread ON notifications(user_id, is_read) WHERE is_read = FALSE;
 
 -- ========================================
 -- SESSIONS TABLE
@@ -427,10 +427,10 @@ CREATE TABLE IF NOT EXISTS sessions (
 );
 
 -- Indexes
-CREATE INDEX idx_sessions_user_id ON sessions(user_id);
-CREATE INDEX idx_sessions_session_id ON sessions(session_id);
-CREATE INDEX idx_sessions_expires_at ON sessions(expires_at);
-CREATE INDEX idx_sessions_active ON sessions(is_active) WHERE is_active = TRUE;
+CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id);
+CREATE INDEX IF NOT EXISTS idx_sessions_session_id ON sessions(session_id);
+CREATE INDEX IF NOT EXISTS idx_sessions_expires_at ON sessions(expires_at);
+CREATE INDEX IF NOT EXISTS idx_sessions_active ON sessions(is_active) WHERE is_active = TRUE;
 
 -- ========================================
 -- AUDIT LOG TABLE
@@ -464,9 +464,9 @@ CREATE TABLE IF NOT EXISTS audit_log (
 );
 
 -- Indexes
-CREATE INDEX idx_audit_log_user_id ON audit_log(user_id);
-CREATE INDEX idx_audit_log_table_name ON audit_log(table_name);
-CREATE INDEX idx_audit_log_created_at ON audit_log(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_audit_log_user_id ON audit_log(user_id);
+CREATE INDEX IF NOT EXISTS idx_audit_log_table_name ON audit_log(table_name);
+CREATE INDEX IF NOT EXISTS idx_audit_log_created_at ON audit_log(created_at DESC);
 
 -- ========================================
 -- SYSTEM SETTINGS TABLE
@@ -483,7 +483,7 @@ CREATE TABLE IF NOT EXISTS system_settings (
 );
 
 -- Indexes
-CREATE INDEX idx_system_settings_key ON system_settings(setting_key);
+CREATE INDEX IF NOT EXISTS idx_system_settings_key ON system_settings(setting_key);
 
 -- ========================================
 -- TRIGGERS
@@ -500,25 +500,25 @@ END;
 $$ language 'plpgsql';
 
 -- Apply trigger to all tables with updated_at
-CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users
+CREATE OR REPLACE TRIGGER update_users_updated_at BEFORE UPDATE ON users
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-CREATE TRIGGER update_patients_updated_at BEFORE UPDATE ON patients
+CREATE OR REPLACE TRIGGER update_patients_updated_at BEFORE UPDATE ON patients
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-CREATE TRIGGER update_doctors_updated_at BEFORE UPDATE ON doctors
+CREATE OR REPLACE TRIGGER update_doctors_updated_at BEFORE UPDATE ON doctors
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-CREATE TRIGGER update_ct_scans_updated_at BEFORE UPDATE ON ct_scans
+CREATE OR REPLACE TRIGGER update_ct_scans_updated_at BEFORE UPDATE ON ct_scans
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-CREATE TRIGGER update_appointments_updated_at BEFORE UPDATE ON appointments
+CREATE OR REPLACE TRIGGER update_appointments_updated_at BEFORE UPDATE ON appointments
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-CREATE TRIGGER update_messages_updated_at BEFORE UPDATE ON messages
+CREATE OR REPLACE TRIGGER update_messages_updated_at BEFORE UPDATE ON messages
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-CREATE TRIGGER update_scan_comments_updated_at BEFORE UPDATE ON scan_comments
+CREATE OR REPLACE TRIGGER update_scan_comments_updated_at BEFORE UPDATE ON scan_comments
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- ========================================
