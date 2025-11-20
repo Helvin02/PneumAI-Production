@@ -3,18 +3,20 @@ Database Connection and Utilities for PneumAI
 PostgreSQL integration using psycopg2 with connection pooling
 """
 
+import os
+from dotenv import load_dotenv
+
+# Load .env variables before using them
+load_dotenv()
+
 import psycopg2
 from psycopg2.extras import RealDictCursor
 from psycopg2.pool import SimpleConnectionPool
-from psycopg2 import IntegrityError, OperationalError
 from contextlib import contextmanager
-from typing import Optional, Dict, List, Any
+from typing import Optional, Dict, List
 from datetime import date, datetime, time
 import logging
-
 from app.config import settings
-
-load_dotenv()
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
